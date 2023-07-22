@@ -3,7 +3,7 @@ from PIL import Image,  ImageOps
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as fd
-from PIL import ImageTk, Image, ImageDraw
+from PIL import ImageTk, Image
 
 import glob
 import os
