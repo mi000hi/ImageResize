@@ -29,7 +29,7 @@ class TKWindow():
     rectangle = None
     input_quality_entry = None
 
-    image_output_quality = 85
+    image_output_quality = 50
 
     def save_image(self, image):
         quality = int(self.input_quality_entry.get())
@@ -37,7 +37,10 @@ class TKWindow():
 
         img_filename = os.path.basename(self.current_image_path)
         img_filename_split = os.path.splitext(img_filename)
-        image.save(f"{self.image_directory_path_output}/{img_filename_split[0]}_quality{quality}{img_filename_split[1]}", quality=quality, optimize=True, exif=exif)
+        if False:
+            image.save(f"{self.image_directory_path_output}/{img_filename_split[0]}_quality{quality}{img_filename_split[1]}", quality=quality, optimize=True, exif=exif)
+        else:
+            image.save(f"{self.image_directory_path_output}/{img_filename}", quality=quality, optimize=True, exif=exif)
 
     def update_tk_image(self, tk_image):
         self.canvas_image = self.canvas.create_image(0,0, anchor=tk.NW, image=tk_image)
