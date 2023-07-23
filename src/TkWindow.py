@@ -36,7 +36,8 @@ class TKWindow():
         exif = self.img_raw.info['exif']
 
         img_filename = os.path.basename(self.current_image_path)
-        image.save(f"{self.image_directory_path_output}/{img_filename}", quality=quality, optimize=True, exif=exif)
+        img_filename_split = os.path.splitext(img_filename)
+        image.save(f"{self.image_directory_path_output}/{img_filename_split[0]}_quality{quality}{img_filename_split[1]}", quality=quality, optimize=True, exif=exif)
 
     def update_tk_image(self, tk_image):
         self.canvas_image = self.canvas.create_image(0,0, anchor=tk.NW, image=tk_image)
@@ -67,6 +68,7 @@ class TKWindow():
         print("skipping image")
 
         self.image_index += 1
+        self.still_on_first_image = False
         self.load_new_image()
         self.update_tk_image(self.current_tk_image_raw)
 
@@ -75,6 +77,7 @@ class TKWindow():
         self.save_image(self.img_raw)
 
         self.image_index += 1
+        self.still_on_first_image = False
         self.load_new_image()
         self.update_tk_image(self.current_tk_image_raw)
 
@@ -101,6 +104,7 @@ class TKWindow():
         # get image path list
         self.image_paths = glob.glob(f"{self.image_directory_path}/*.jpg")
         self.image_index = self.image_index_first
+        self.still_on_first_image = True
 
         self.load_new_image()
         self.update_tk_image(self.current_tk_image_raw)
@@ -109,14 +113,19 @@ class TKWindow():
         print(f"selected output directory: {self.image_directory_path_output}")
 
     def button_convert_all_except_16_9_function(self):
-        while self.image_index > 0:
+        while self.image_index > 0 or self.still_on_first_image:
             if self.img_raw.width/self.img_raw.height != 16.0/9.0:
                 self.button_save_and_skip_function()
             else:
                 self.button_skip_function()
 
+    def button_convert_all_function(self):
+        while self.image_index > 0 or self.still_on_first_image:
+            self.button_save_and_skip_function()
+
     def button_last_function(self):
         self.image_index -= 1
+        self.still_on_first_image = False
         self.load_new_image()
         self.update_tk_image(self.current_tk_image_raw)
 
@@ -153,6 +162,7 @@ class TKWindow():
         self.aspect_ratios            = aspect_ratios
         self.aspect_ratio_new_string  = '16:9'
         self.image_index_first        = first_image_index
+        self.still_on_first_image     = True
 
         #This creates the main window of an application
         self.root = tk.Tk()
@@ -184,13 +194,15 @@ class TKWindow():
         self.button_convert_all_until_change.grid(row=0, column=3, padx=5, pady=5)
         self.button_convert_all_except_16_9 = tk.Button(self.top_frame_buttons, width=20, height=1, text='convert except 16/9', command=self.button_convert_all_except_16_9_function)
         self.button_convert_all_except_16_9.grid(row=1, column=3, padx=5, pady=5)
+        self.button_convert_all = tk.Button(self.top_frame_buttons, width=20, height=1, text='convert all', command=self.button_convert_all_function)
+        self.button_convert_all.grid(row=0, column=4, padx=5, pady=5)
 
         # image quality input field
         self.image_quality_label = tk.Label(self.top_frame_buttons, text="Image Quality: ", width=20, height=1)
-        self.image_quality_label.grid(row=0, column=4, padx=5, pady=5)
+        self.image_quality_label.grid(row=1, column=4, padx=5, pady=5)
         self.input_quality_entry = tk.Entry(self.top_frame_buttons, width=20)
         self.input_quality_entry.insert(0, str(self.image_output_quality))
-        self.input_quality_entry.grid(row=0, column=5, padx=5, pady=5)
+        self.input_quality_entry.grid(row=1, column=5, padx=5, pady=5)
 
         # # add progress bar
         self.progress = ttk.Progressbar(self.top_frame, orient='horizontal', mode='determinate', length=window_dimensions[0]-20-20)
