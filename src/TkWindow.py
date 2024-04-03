@@ -33,14 +33,21 @@ class TKWindow():
 
     def save_image(self, image):
         quality = int(self.input_quality_entry.get())
-        exif = self.img_raw.info['exif']
+        # print(self.img_raw.info)
+        exif = None
+        # print(f"keys: {self.img_raw.info.keys()}")
+        if 'exif' in self.img_raw.info.keys():
+            exif = self.img_raw.info['exif']
 
         img_filename = os.path.basename(self.current_image_path)
         img_filename_split = os.path.splitext(img_filename)
         if False:
             image.save(f"{self.image_directory_path_output}/{img_filename_split[0]}_quality{quality}{img_filename_split[1]}", quality=quality, optimize=True, exif=exif)
         else:
-            image.save(f"{self.image_directory_path_output}/{img_filename}", quality=quality, optimize=True, exif=exif)
+            if exif is not None:
+                image.save(f"{self.image_directory_path_output}/{img_filename}", quality=quality, optimize=True, exif=exif)
+            else:
+                image.save(f"{self.image_directory_path_output}/{img_filename}", quality=quality, optimize=True)
 
     def update_tk_image(self, tk_image):
         self.canvas_image = self.canvas.create_image(0,0, anchor=tk.NW, image=tk_image)
@@ -75,9 +82,13 @@ class TKWindow():
         self.load_new_image()
         self.update_tk_image(self.current_tk_image_raw)
 
-    def button_save_and_skip_function(self):
+    def button_save_and_skip_function(self, image=None):
         print("saving and skipping image")
-        self.save_image(self.img_raw)
+
+        if image is not None:
+            self.save_image(image)
+        else:
+            self.save_image(self.img_raw)
 
         self.image_index += 1
         self.still_on_first_image = False
@@ -106,6 +117,8 @@ class TKWindow():
 
         # get image path list
         self.image_paths = glob.glob(f"{self.image_directory_path}/*.jpg")
+        self.image_paths.extend(glob.glob(f"{self.image_directory_path}/*.JPG"))
+        self.image_paths.extend(glob.glob(f"{self.image_directory_path}/*.jpeg"))
         self.image_index = self.image_index_first
         self.still_on_first_image = True
 
@@ -138,6 +151,17 @@ class TKWindow():
 
         while self.img_raw.width == current_width and self.img_raw.height == current_height:
             self.button_save_and_skip_function()
+
+    def button_resize_and_convert_all_function(self):
+        while self.image_index > 0 or self.still_on_first_image:
+            orig_w, orig_h = self.img_raw.size
+            new_h = 2160
+            if orig_h < new_h:
+                new_h = orig_h
+            new_w = int(new_h*orig_w/orig_h)
+            image = self.img_raw.resize((new_w, new_h))
+
+            self.button_save_and_skip_function(image)
 
     def key_handler(self, event):
         print(event.char, event.keysym, event.keycode)
@@ -199,6 +223,8 @@ class TKWindow():
         self.button_convert_all_except_16_9.grid(row=1, column=3, padx=5, pady=5)
         self.button_convert_all = tk.Button(self.top_frame_buttons, width=20, height=1, text='convert all', command=self.button_convert_all_function)
         self.button_convert_all.grid(row=0, column=4, padx=5, pady=5)
+        self.button_resize_and_convert_all = tk.Button(self.top_frame_buttons, width=20, height=1, text='resize & convert all', command=self.button_resize_and_convert_all_function)
+        self.button_resize_and_convert_all.grid(row=0, column=5, padx=5, pady=5)
 
         # image quality input field
         self.image_quality_label = tk.Label(self.top_frame_buttons, text="Image Quality: ", width=20, height=1)
